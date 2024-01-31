@@ -147,22 +147,53 @@ class SecurityVoiceCodeAccessApp(QMainWindow):
 
         # Match fingerprints against the database
         matches = self.audio_matcher.match_fingerprints(fingerprints)
-        
-        # Identify the best match phrase
-        phr, identified_phrase = self.audio_matcher.identify_phrase(matches)
+        if matches:
+            
+            # Identify the best match phrase
+            phr, identified_phrase = self.audio_matcher.identify_phrase(matches)
 
-        # Calculate match percentages
-        self.prediction_prob_word = self.audio_matcher.calculate_match_percentage(fingerprints)
+            # Calculate match percentages
+            self.prediction_prob_word = self.audio_matcher.calculate_match_percentage(fingerprints)
 
-        # Print the identified phrase, or a message if not found
-        if identified_phrase:
-            print("The phrase is most likely:", identified_phrase)
+            # Print the identified phrase, or a message if not found
+            if identified_phrase:
+                print("The phrase is most likely:", identified_phrase)
+            else:
+                print("Phrase not found in the database.")
+
+            return identified_phrase
         else:
-            print("Phrase not found in the database.")
+            self.ui.result_label.setText("Access denied")
 
-        return identified_phrase
+    def recognize_phrase2(self, audio_file_path):
+            """
+            Recognizes a phrase in an audio file.
 
+            Args:
+                audio_file_path (str): The path to the audio file.
 
+            Returns:
+                str: The identified phrase, or None if not found.
+            """
+
+            self.prediction_prob_word = {}
+
+            self.pred_model = AccessModel(folder_path='accessWords')
+
+            model_path = 'svmout2'
+            prob_arr, identified_phrase = self.pred_model.get_prediction(audio_file_path, model_path)
+
+            for key, value in zip(self.access_keys, prob_arr):
+                self.prediction_prob_word[key] = value
+
+            # Print the identified phrase, or a message if not found
+            if identified_phrase:
+                print("The phrase is most likely:", identified_phrase)
+            else:
+                print("Phrase not found in the database.")
+
+            return identified_phrase
+        
     def wordkey_access(self):
         """
         Recognizes speech from a recorded audio file and performs access control based on the recognized speech.
@@ -189,7 +220,7 @@ class SecurityVoiceCodeAccessApp(QMainWindow):
             None
         """
         # person_predicrion.train_speaker_recognition_model()
-        self.pred_model = AccessModel(folder_path='Members')
+        self.pred_model = AccessModel(folder_path='members2')
         
         prob_arr, predicted_speaker = self.pred_model.get_prediction('recorded_audio.wav', "svm_Persons_model")
 

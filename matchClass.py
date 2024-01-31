@@ -267,5 +267,7 @@ class AudioMatcher:
             match_percentages[song_id] = match_percentage
             if self.flag:
                 match_percentages[self.match_prob.lower()] = val
+            else:
+                match_percentages['others'] = val
 
         return match_percentages
