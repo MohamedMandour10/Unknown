@@ -28,6 +28,7 @@ class SecurityVoiceCodeAccessApp(QMainWindow):
         self.access_keys = ["grant me access", "open middle door","unlock the gate", ]
         self.ui.recordButton.clicked.connect(self.record_audio)
         self.pred_model = None
+        self.prediction_prob_word = None
         self.load_ui_elements()
 
     def setup_widget_layout(self, widget, layout_parent):
@@ -147,6 +148,7 @@ class SecurityVoiceCodeAccessApp(QMainWindow):
 
         # Match fingerprints against the database
         matches = self.audio_matcher.match_fingerprints(fingerprints)
+
         if matches:
             
             # Identify the best match phrase
@@ -164,35 +166,8 @@ class SecurityVoiceCodeAccessApp(QMainWindow):
             return identified_phrase
         else:
             self.ui.result_label.setText("Access denied")
+            return False
 
-    def recognize_phrase2(self, audio_file_path):
-            """
-            Recognizes a phrase in an audio file.
-
-            Args:
-                audio_file_path (str): The path to the audio file.
-
-            Returns:
-                str: The identified phrase, or None if not found.
-            """
-
-            self.prediction_prob_word = {}
-
-            self.pred_model = AccessModel(folder_path='accessWords')
-
-            model_path = 'svmout2'
-            prob_arr, identified_phrase = self.pred_model.get_prediction(audio_file_path, model_path)
-
-            for key, value in zip(self.access_keys, prob_arr):
-                self.prediction_prob_word[key] = value
-
-            # Print the identified phrase, or a message if not found
-            if identified_phrase:
-                print("The phrase is most likely:", identified_phrase)
-            else:
-                print("Phrase not found in the database.")
-
-            return identified_phrase
         
     def wordkey_access(self):
         """
@@ -203,12 +178,14 @@ class SecurityVoiceCodeAccessApp(QMainWindow):
         """
         # Recognize the speech from the recorded audio
         recognized_speech = self.recognize_phrase('recorded_audio.wav')
+        if recognized_speech:
+            if recognized_speech in self.access_keys:
+                self.person_access()
 
-        if recognized_speech in self.access_keys:
-            self.person_access()
-
+            else:
+                self.person_access()
+                self.ui.result_label.setText("Access denied")
         else:
-            self.person_access()
             self.ui.result_label.setText("Access denied")
 
 
@@ -220,7 +197,7 @@ class SecurityVoiceCodeAccessApp(QMainWindow):
             None
         """
         # person_predicrion.train_speaker_recognition_model()
-        self.pred_model = AccessModel(folder_path='members2')
+        self.pred_model = AccessModel(folder_path='Members2')
         
         prob_arr, predicted_speaker = self.pred_model.get_prediction('recorded_audio.wav', "svm_Persons_model")
 
@@ -305,41 +282,6 @@ class SecurityVoiceCodeAccessApp(QMainWindow):
         return prediction_probabilities
 
 
-
-    # def calculate_word_match_percentage(self, access_keys, recognized_speech):
-    #     """
-    #     Calculate the word match percentage between recognized speech and a list of access keys.
-
-    #     Args:
-    #         access_keys (list): The list of access keys to compare against.
-    #         recognized_speech (str): The recognized speech to compare.
-
-    #     Returns:
-    #         list: The list of match percentages between recognized speech and each access key.
-    #     """
-    #     match_percentages = []
-    #     self.prediction_prob_word = {}  # Initialize the prediction probability dictionary
-
-    #     for access_key in access_keys:
-    #         # Split the recognized speech and access key into sets of words
-    #         recognized_words = set(recognized_speech.split())
-    #         access_key_words = set(access_key.split())
-
-    #         # Find the common words between the recognized speech and access key
-    #         common_words = recognized_words.intersection(access_key_words)
-
-    #         # Calculate the match percentage using the formula:
-    #         # (number of common words) / (minimum of the number of words in recognized speech and access key)
-    #         match_percentage = (len(common_words) / min(len(recognized_words), len(access_key_words)))
-
-    #         # Append the match percentage to the list
-    #         match_percentages.append(match_percentage)
-
-    #     # Assign the match percentages to the corresponding access keys in the prediction probability dictionary
-    #     for key, prob in zip(self.access_keys, match_percentages):
-    #         self.prediction_prob_word[key] = prob
-
-    #     return match_percentages
 
 
 if __name__ == '__main__':
